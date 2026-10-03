@@ -1,0 +1,164 @@
+{% extends "detector/base.html" %}
+{% block title %}管理后台 · 交通目标检测对比系统{% endblock %}
+
+{% block content %}
+<div class="admin-head">
+    <h2>📊 数据管理后台</h2>
+    <span class="badge" style="background:linear-gradient(135deg,#ef4444,#f97316);font-size:.8rem;padding:.5em 1em;">管理员模式</span>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card c1">
+            <div class="card-body">
+                <div class="stat-ico">🔍</div>
+                <h6>检测总次数</h6>
+                <div class="stat-num">{{ total_records }}<small>次</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card c2">
+            <div class="card-body">
+                <div class="stat-ico">📄</div>
+                <h6>检测结果总数</h6>
+                <div class="stat-num">{{ total_results }}<small>条</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card c3">
+            <div class="card-body">
+                <div class="stat-ico">🎯</div>
+                <h6>检测目标总数</h6>
+                <div class="stat-num">{{ total_objects }}<small>个</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card c4">
+            <div class="card-body">
+                <div class="stat-ico">⚡</div>
+                <h6>平均推理耗时</h6>
+                <div class="stat-num">{{ avg_latency }}<small>ms</small></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 模型统计 + 用户列表 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="panel">
+            <div class="panel-head">🔧 模型性能对比</div>
+            <div class="panel-body flush">
+                <table class="table panel-table mb-0">
+                    <thead>
+                    <tr><th>模型</th><th>检测次数</th><th>平均耗时(ms)</th><th>目标总数</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for s in model_stats %}
+                        <tr>
+                            <td>
+                                <span class="badge {% if s.model_name == 'yolov11' %}v11{% else %}v8{% endif %}">
+                                    {% if s.model_name == 'yolov11' %}⚡ YOLOv11s{% else %}🧠 YOLOv8s{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ s.count }}</td>
+                            <td>{{ s.avg_ms|floatformat:1 }}</td>
+                            <td>{{ s.total_objects }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-ink-soft py-3">暂无数据</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="panel">
+            <div class="panel-head">👥 注册用户列表</div>
+            <div class="panel-body flush">
+                <div class="table-responsive">
+                    <table class="table panel-table table-hover mb-0">
+                        <thead>
+                        <tr><th>用户名</th><th>角色</th><th>检测次数</th><th>注册时间</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td class="fw-semibold">{{ u.username }}</td>
+                                <td>
+                                    {% if u.is_staff %}
+                                        <span class="badge text-bg-danger">管理员</span>
+                                    {% else %}
+                                        <span class="badge text-bg-secondary">用户</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ u.record_count }}</td>
+                                <td class="small text-ink-soft">{{ u.date_joined|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-ink-soft py-3">暂无注册用户</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近检测记录 -->
+<div class="panel">
+    <div class="panel-head">
+        🕐 最近检测记录（共 {{ total_records }} 条）
+        <a href="{% url 'detector:history' %}" class="btn btn-sm btn-soft ms-auto">查看全部</a>
+    </div>
+    <div class="panel-body flush">
+        <div class="table-responsive">
+            <table class="table panel-table table-hover mb-0">
+                <thead>
+                <tr><th>#</th><th>用户</th><th>文件名</th><th>模型</th><th>置信度</th><th>结果</th><th>耗时(ms)</th><th>时间</th></tr>
+                </thead>
+                <tbody>
+                {% for r in recent_records %}
+                    <tr>
+                        <td><a href="{% url 'detector:result' pk=r.pk %}" class="fw-semibold">{{ r.pk }}</a></td>
+                        <td class="small">{{ r.user.username|default:"匿名" }}</td>
+                        <td class="text-truncate" style="max-width:200px">{{ r.original_name }}</td>
+                        <td>
+                            {% if r.models_used == 'both' %}
+                                <span class="badge both">双模型</span>
+                            {% elif r.models_used == 'yolov11' %}
+                                <span class="badge v11">YOLOv11s</span>
+                            {% else %}
+                                <span class="badge v8">YOLOv8s</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ r.conf_threshold }}</td>
+                        <td>
+                            {% for res in r.results.all %}
+                                <span class="mini-badge {% if res.model_name == 'yolov11' %}v11{% else %}v8{% endif %}">
+                                    {{ res.num_objects }}
+                                </span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for res in r.results.all %}{{ res.inference_ms|floatformat:0 }} {% endfor %}
+                        </td>
+                        <td class="small text-ink-soft">{{ r.created_at|date:"m-d H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="8" class="text-center text-ink-soft py-3">暂无检测记录</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "detector/base.html" %}
+{% block title %}上传检测 · 交通目标检测对比系统{% endblock %}
+{% block content %}
+
+{# ---------------- Hero ---------------- #}
+<section class="hero">
+    <h1>🚦 交通场景四模型目标检测</h1>
+    <p>上传一张交通场景图片，YOLOv8s / YOLOv11s / YOLOv8n / YOLOv11n 四种模型可单独或组合推理，直观对比检测框、置信度与耗时。</p>
+    <div class="hero-tags">
+        <span class="hero-tag">🧠 YOLOv8s · Anchor-Free</span>
+        <span class="hero-tag">⚡ YOLOv11s · Anchor-Based</span>
+        <span class="hero-tag">🚀 YOLOv8n / v11n · 轻量高速</span>
+        <span class="hero-tag">🖼️ 输入 320×320</span>
+        <span class="hero-tag">📊 11 类交通目标</span>
+    </div>
+</section>
+
+<div class="card">
+    <div class="card-body">
+        {% if error %}<div class="app-alert app-alert-error mb-3"><span class="app-alert-ico">✕</span><span>{{ error }}</span></div>{% endif %}
+
+        <form method="post" action="{% url 'detector:detect' %}" enctype="multipart/form-data" id="detect-form">
+            {% csrf_token %}
+
+            <div class="row g-4">
+                {# ---------- 左：上传 ---------- #}
+                <div class="col-lg-6">
+                    <div class="section-title"><span class="step-no">1</span>选择交通图片</div>
+
+                    <div class="upload-zone" id="upload-zone">
+                        <input type="file" name="image" id="image-input" accept="image/*" required>
+                        <img id="preview" class="d-none" alt="预览">
+                        <div id="preview-empty" class="upload-empty">
+                            <span class="upload-ico">📁</span>
+                            <div class="upload-main">点击选择图片，或将图片拖拽到此处</div>
+                            <div class="upload-hint">支持 jpg / png / bmp / webp，大小不超过 10MB</div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <span class="file-name-pill" id="file-pill">📎 <span id="file-name-text"></span></span>
+                    </div>
+                </div>
+
+                {# ---------- 右：参数 ---------- #}
+                <div class="col-lg-6">
+                    <div class="section-title"><span class="step-no">2</span>选择检测模型</div>
+                    <div class="d-grid gap-2 mb-4">
+
+                        <label class="model-option {% if 'yolov8' not in available_models %}disabled{% endif %}" data-key="yolov8">
+                            <input type="radio" name="models" value="yolov8"
+                                   {% if 'yolov8' not in available_models %}disabled{% endif %}>
+                            <span class="model-ico v8">8️⃣</span>
+                            <span>
+                                <span class="model-name d-block">仅 YOLOv8s</span>
+                                <span class="model-desc d-block">Anchor-Free · 解耦检测头，精度表现更优</span>
+                                {% with model_modes.yolov8 as m %}
+                                    {% if m == 'traffic' %}<span class="weight-badge traffic">交通数据集权重</span>
+                                    {% elif m == 'coco' %}<span class="weight-badge coco">COCO 演示权重</span>
+                                    {% else %}<span class="weight-badge missing">权重缺失</span>{% endif %}
+                                {% endwith %}
+                            </span>
+                            <span class="model-check">✓</span>
+                        </label>
+
+                        <label class="model-option {% if 'yolov11' not in available_models %}disabled{% endif %}" data-key="yolov11">
+                            <input type="radio" name="models" value="yolov11"
+                                   {% if 'yolov11' not in available_models %}disabled{% endif %}>
+                            <span class="model-ico v11">1️⃣1️⃣</span>
+                            <span>
+                                <span class="model-name d-block">仅 YOLOv11s</span>
+                                <span class="model-desc d-block">Anchor-Based · CSPDarknet，成熟稳定速度均衡</span>
+                                {% with model_modes.yolov11 as m %}
+                                    {% if m == 'traffic' %}<span class="weight-badge traffic">交通数据集权重</span>
+                                    {% elif m == 'coco' %}<span class="weight-badge coco">COCO 演示权重</span>
+                                    {% else %}<span class="weight-badge missing">权重缺失</span>{% endif %}
+                                {% endwith %}
+                            </span>
+                            <span class="model-check">✓</span>
+                        </label>
+
+                        <label class="model-option {% if 'yolov8n' not in available_models %}disabled{% endif %}" data-key="yolov8n">
+                            <input type="radio" name="models" value="yolov8n"
+                                   {% if 'yolov8n' not in available_models %}disabled{% endif %}>
+                            <span class="model-ico v8n">🚀</span>
+                            <span>
+                                <span class="model-name d-block">仅 YOLOv8n（轻量）</span>
+                                <span class="model-desc d-block">3.2M 参数 · 速度最快，适合实时场景</span>
+                                {% with model_modes.yolov8n as m %}
+                                    {% if m == 'traffic' %}<span class="weight-badge traffic">交通数据集权重</span>
+                                    {% elif m == 'coco' %}<span class="weight-badge coco">COCO 演示权重</span>
+                                    {% else %}<span class="weight-badge missing">权重缺失</span>{% endif %}
+                                {% endwith %}
+                            </span>
+                            <span class="model-check">✓</span>
+                        </label>
+
+                        <label class="model-option {% if 'yolov11n' not in available_models %}disabled{% endif %}" data-key="yolov11n">
+                            <input type="radio" name="models" value="yolov11n"
+                                   {% if 'yolov11n' not in available_models %}disabled{% endif %}>
+                            <span class="model-ico v11n">⚡</span>
+                            <span>
+                                <span class="model-name d-block">仅 YOLOv11n（轻量）</span>
+                                <span class="model-desc d-block">1.9M 参数 · 极致轻量，移动端友好</span>
+                                {% with model_modes.yolov11n as m %}
+                                    {% if m == 'traffic' %}<span class="weight-badge traffic">交通数据集权重</span>
+                                    {% elif m == 'coco' %}<span class="weight-badge coco">COCO 演示权重</span>
+                                    {% else %}<span class="weight-badge missing">权重缺失</span>{% endif %}
+                                {% endwith %}
+                            </span>
+                            <span class="model-check">✓</span>
+                        </label>
+
+                        <label class="model-option" data-key="both">
+                            <input type="radio" name="models" value="both" checked>
+                            <span class="model-ico vs">🔬</span>
+                            <span>
+                                <span class="model-name d-block">双模型对比（v8s × v11s）</span>
+                                <span class="model-desc d-block">同图同阈值推理，并排对比检测结果与耗时</span>
+                            </span>
+                            <span class="model-check">✓</span>
+                        </label>
+
+                        <label class="model-option" data-key="all">
+                            <input type="radio" name="models" value="all">
+                            <span class="model-ico all4">📊</span>
+                            <span>
+                                <span class="model-name d-block">四模型全对比</span>
+                                <span class="model-desc d-block">v8s + v8n + v11s + v11n 同图推理，完整横向评测</span>
+                            </span>
+                            <span class="model-check">✓</span>
+                        </label>
+                    </div>
+
+                    <div class="section-title"><span class="step-no">3</span>调节置信度阈值</div>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" name="conf" id="conf"
+                               min="0.05" max="0.95" step="0.05" value="0.45">
+                        <span class="badge bg-primary fs-6" id="conf-value" style="min-width:3.2rem;">0.45</span>
+                    </div>
+                    <div class="form-text text-ink-soft mt-1 mb-3 px-1">阈值越高，检测框越少但越可靠</div>
+
+                    <div class="info-note mb-3">
+                        {% if 'traffic' in model_modes.values %}
+                            当前已加载 Kaggle 交通数据集训练权重（11 类）。
+                        {% else %}
+                            当前为 COCO 预训练演示模式，仅展示可映射的交通类别（car→Vehicle 等）；
+                            将 Kaggle 训练导出的 <code>*_traffic_best.pt</code>
+                            放入 <code>webapp/models/</code> 后重启即自动切换。
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn-gradient btn-lg w-100" id="submit-btn">🚀 开始检测</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# 加载遮罩: CPU 推理需要数秒 #}
+<div id="loading" class="loading-overlay d-none">
+    <div class="loading-card">
+        <div class="spinner-border"></div>
+        <div class="load-title">模型推理中，请稍候…</div>
+        <div class="load-sub">多模型同图检测预计需要数秒</div>
+    </div>
+</div>
+{% endblock %}

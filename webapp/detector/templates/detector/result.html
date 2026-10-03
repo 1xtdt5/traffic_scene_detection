@@ -1,0 +1,103 @@
+{% extends "detector/base.html" %}
+{% block title %}检测结果 · {{ record.original_name }}{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h2 class="h4 mb-1">🧪 检测结果对比</h2>
+        <div class="page-sub">#{{ record.pk }} · {{ record.original_name }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-soft" href="{% url 'detector:index' %}">🔄 再测一张</a>
+        <a class="btn btn-soft" href="{% url 'detector:history' %}">🗂️ 历史记录</a>
+    </div>
+</div>
+
+<div class="info-strip">
+    <span class="strip-item">🎯 检测模式：<strong>{{ record.get_models_used_display }}</strong></span>
+    <span class="strip-item">📊 置信度阈值：<strong>{{ record.conf_threshold }}</strong></span>
+    <span class="strip-item">🕐 {{ record.created_at|date:"Y-m-d H:i:s" }}</span>
+</div>
+
+<div class="row g-4">
+    {# 原图 #}
+    <div class="{% if results|length == 2 %}col-lg-4{% else %}col-lg-6{% endif %}">
+        <div class="card result-card">
+            <div class="card-head head-original">🖼️ 原图<span class="head-tag">Original</span></div>
+            <div class="result-img-wrap">
+                <img src="{{ record.image.url }}" alt="原图">
+            </div>
+        </div>
+    </div>
+
+    {# 各模型结果 #}
+    {% for r in results %}
+        <div class="{% if results|length == 2 %}col-lg-4{% else %}col-lg-6{% endif %}">
+            <div class="card result-card">
+                <div class="card-head {% if r.model_name == 'yolov11' %}head-v11{% else %}head-v8{% endif %}">
+                    {% if r.model_name == 'yolov11' %}⚡ YOLOv11s{% else %}🧠 YOLOv8s{% endif %}
+                    {% if r.detail.0.error %}<span class="head-tag">模型不可用</span>{% endif %}
+                </div>
+                {% if r.detail.0.error %}
+                    <div class="error-box">
+                        <span class="err-ico">⚠️</span>
+                        {{ r.detail.0.error }}
+                    </div>
+                {% else %}
+                    <div class="result-img-wrap">
+                        <img src="{{ r.result_image.url }}" alt="{{ r.model_label }}检测结果">
+                    </div>
+                    <div class="card-body pt-2">
+                        <div class="metric-row">
+                            <div class="metric-chip {% if r.model_name == 'yolov11' %}v11{% else %}v8{% endif %}">
+                                <span class="mc-val">{{ r.num_objects }}</span>
+                                <span class="mc-label">检测目标</span>
+                            </div>
+                            <div class="metric-chip {% if r.model_name == 'yolov11' %}v11{% else %}v8{% endif %}">
+                                <span class="mc-val">{{ r.inference_ms|floatformat:0 }}<small> ms</small></span>
+                                <span class="mc-label">推理耗时</span>
+                            </div>
+                            <div class="metric-chip">
+                                <span class="mc-val">{{ r.class_counts|length }}</span>
+                                <span class="mc-label">目标类别</span>
+                            </div>
+                        </div>
+
+                        {% if r.class_counts %}
+                            <div class="class-pills">
+                                {% for c, n in r.class_counts.items %}
+                                    <span class="class-pill">{{ c }} × {{ n }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered detail-table mb-0">
+                                <thead>
+                                <tr><th>类别</th><th>置信度</th><th>坐标 (x1, y1, x2, y2)</th></tr>
+                                </thead>
+                                <tbody>
+                                {% for d in r.detail %}
+                                    <tr>
+                                        <td class="fw-semibold text-nowrap">{{ d.class }}</td>
+                                        <td class="conf-cell">
+                                            <div>{{ d.confidence|floatformat:3 }}</div>
+                                            <div class="conf-bar {% if r.model_name == 'yolov11' %}v11{% endif %}">
+                                                <span style="width: {% widthratio d.confidence 1 100 %}%"></span>
+                                            </div>
+                                        </td>
+                                        <td class="font-monospace">{{ d.bbox|join:", " }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="3" class="text-center text-ink-soft py-3">未检测到高于阈值的目标</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "detector/base.html" %}
+{% block title %}视频检测结果 - 交通目标检测对比系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="fw-bold mb-0">视频检测结果 <small class="text-muted fs-6">#{{ record.pk }}</small></h2>
+      <div>
+        <a href="{% url 'detector:video' %}" class="btn btn-soft">再检测一个</a>
+        <a href="{% url 'detector:video_list' %}" class="btn btn-soft">历史记录</a>
+      </div>
+    </div>
+    <div class="card shadow-sm p-3 mb-3 text-center">
+      {% if record.result_video %}
+      <video controls class="w-100 rounded" style="max-height:480px">
+        <source src="{{ record.result_video.url }}" type="video/mp4">
+        您的浏览器不支持视频播放
+      </video>
+      {% else %}
+      <div class="text-muted py-5">结果视频生成中或处理失败</div>
+      {% endif %}
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-3 col-6"><div class="stat-card c1 text-center p-3"><div class="stat-num">{{ record.total_frames }}</div><div class="stat-label">总帧数</div></div></div>
+      <div class="col-md-3 col-6"><div class="stat-card c2 text-center p-3"><div class="stat-num">{{ record.processed_frames }}</div><div class="stat-label">已处理帧</div></div></div>
+      <div class="col-md-3 col-6"><div class="stat-card c3 text-center p-3"><div class="stat-num">{{ record.total_objects }}</div><div class="stat-label">目标总数</div></div></div>
+      <div class="col-md-3 col-6"><div class="stat-card c4 text-center p-3"><div class="stat-num">{{ record.avg_objects_per_frame }}</div><div class="stat-label">平均/帧</div></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card shadow-sm p-3">
+          <h5 class="fw-semibold">帧级目标数趋势</h5>
+          <canvas id="frame-chart"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card shadow-sm p-3">
+          <h5 class="fw-semibold">类别分布</h5>
+          <canvas id="class-chart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm p-3 mt-3">
+      <h5 class="fw-semibold">基础信息</h5>
+      <div class="row small">
+        <div class="col-md-3"><strong>文件名:</strong> {{ record.original_name }}</div>
+        <div class="col-md-2"><strong>时长:</strong> {{ record.duration_sec }}s</div>
+        <div class="col-md-2"><strong>FPS:</strong> {{ record.fps }}</div>
+        <div class="col-md-2"><strong>模型:</strong> {{ record.get_models_used_display }}</div>
+        <div class="col-md-3"><strong>平均推理耗时:</strong> {{ record.inference_ms_avg }}ms</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const frameStats = {{ frame_stats_json|safe }};
+const classDist = {{ class_dist_json|safe }};
+
+// 帧级目标数趋势（折线图）
+const frameDatasets = Object.entries(frameStats).map(([model, data], i) => ({
+  label: {yolov8:'YOLOv8s', yolov8n:'YOLOv8n', yolov11:'YOLOv11s', yolov11n:'YOLOv11n'}[model] || model,
+  data: data.map(d => d.y),
+  borderColor: ['#7c3aed','#a78bfa','#f59e0b','#fbbf24'][i],
+  backgroundColor: ['#7c3aed22','#a78bfa22','#f59e0b22','#fbbf2422'][i],
+  tension: 0.3,
+  fill: true
+}));
+const frameLabels = frameStats[Object.keys(frameStats)[0]]?.map(d => '帧' + d.x) || [];
+new Chart(document.getElementById('frame-chart'), {
+  type: 'line',
+  data: { labels: frameLabels, datasets: frameDatasets },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+});
+
+// 类别分布（柱状图）
+new Chart(document.getElementById('class-chart'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(classDist),
+    datasets: [{ label: '目标数', data: Object.values(classDist), backgroundColor: '#f59e0b', borderRadius: 6 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}

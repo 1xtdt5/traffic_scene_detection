@@ -1,0 +1,79 @@
+{% extends "detector/base.html" %}
+{% block title %}视频检测 - 交通目标检测对比系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="hero text-center mb-3">
+      <h1 class="hero-title">🎬 视频检测</h1>
+      <p class="hero-desc">上传视频文件，系统自动逐帧检测交通目标并生成带框视频</p>
+    </div>
+    <form action="{% url 'detector:video_detect' %}" method="post" enctype="multipart/form-data" class="upload-zone text-center p-4" id="video-form">
+      {% csrf_token %}
+      <input type="file" name="video" id="video-input" accept=".mp4,.avi,.mov,.mkv,.webm" class="d-none">
+      <div id="video-preview-area">
+        <div class="upload-icon mb-2">🎬</div>
+        <p class="upload-text">拖拽视频文件到此处 或 点击上传</p>
+        <p class="text-muted small">支持 mp4 / avi / mov / mkv / webm，最大 200MB</p>
+      </div>
+      <div id="video-pill" class="d-none mt-2">
+        <span class="file-pill"><span class="pill-name"></span><button type="button" class="pill-close" onclick="clearVideo()">&times;</button></span>
+      </div>
+      {% if error %}
+      <div class="error-box mt-3">{{ error }}</div>
+      {% endif %}
+      <div class="mt-3 text-start">
+        <label class="fw-semibold d-block mb-2">选择模型</label>
+        <div class="d-flex gap-2 flex-wrap">
+          <label class="model-option" data-key="nano">
+            <input type="radio" name="models" value="nano" checked>
+            <div><div class="fw-semibold">🚀 轻量双模型(n)</div><div class="small text-muted">YOLOv8n + YOLOv11n · 高速</div></div>
+            <span class="model-check">&#10003;</span>
+          </label>
+          <label class="model-option" data-key="both">
+            <input type="radio" name="models" value="both">
+            <div><div class="fw-semibold">⚖️ 标准双模型(s)</div><div class="small text-muted">YOLOv8s + YOLOv11s · 精度</div></div>
+            <span class="model-check">&#10003;</span>
+          </label>
+          <label class="model-option" data-key="all">
+            <input type="radio" name="models" value="all">
+            <div><div class="fw-semibold">📊 四模型全对比</div><div class="small text-muted">v8s + v8n + v11s + v11n</div></div>
+            <span class="model-check">&#10003;</span>
+          </label>
+        </div>
+      </div>
+      <div class="mt-3 text-start">
+        <label class="fw-semibold d-block mb-2">置信度阈值</label>
+        <input type="range" name="conf" min="5" max="95" value="45" class="conf-slider" id="conf-slider">
+        <div class="d-flex justify-content-between small text-muted"><span>0.05</span><span id="conf-val">0.45</span><span>0.95</span></div>
+      </div>
+      <button type="submit" class="btn btn-gradient w-100 mt-3" id="submit-btn">开始视频检测</button>
+    </form>
+    <div class="loading-card d-none" id="loading">
+      <div class="loading-spinner"></div>
+      <div class="mt-3 fw-semibold">视频逐帧检测中，请稍候…</div>
+      <div class="small text-muted">正在对视频进行目标检测与画框合成</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('video-form').addEventListener('submit', function(e) {
+  document.getElementById('loading').classList.remove('d-none');
+  document.getElementById('submit-btn').disabled = true;
+});
+document.getElementById('video-input').addEventListener('change', function() {
+  const f = this.files[0];
+  if (f) {
+    document.querySelector('.pill-name').textContent = f.name;
+    document.getElementById('video-pill').classList.remove('d-none');
+    document.getElementById('video-preview-area').style.display = 'none';
+  }
+});
+function clearVideo() {
+  document.getElementById('video-input').value = '';
+  document.getElementById('video-pill').classList.add('d-none');
+  document.getElementById('video-preview-area').style.display = '';
+}
+</script>
+{% endblock %}

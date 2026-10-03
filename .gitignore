@@ -1,0 +1,60 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# ===== 虚拟环境 =====
+venv/
+.venv/
+env/
+
+# ===== 原始数据集（13GB，不入库；Kaggle 上挂载 tailength/traffic-object） =====
+archive (1)/
+
+# ===== 第三方依赖源码（按需重新 clone，不入库） =====
+third_party/
+
+# ===== Django 运行时 =====
+*.log
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+local_settings.py
+media_collected/
+webapp/staticfiles/
+
+# ===== 用户上传与检测结果（运行时产生，不入库；保留目录结构与示例图） =====
+webapp/media/uploads/*
+webapp/media/results/*
+webapp/media/videos/*
+webapp/media/reports/*
+!webapp/media/uploads/.gitkeep
+!webapp/media/results/.gitkeep
+!webapp/media/videos/.gitkeep
+!webapp/media/reports/.gitkeep
+# sample 示例图片保留提交（供快速测试）
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== 模型训练中间产物（只保留最终 best 权重） =====
+runs/
+runs_v8/
+runs_v11/
+wandb/
+
+# ===== IDE / 系统 =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 打包产物 =====
+*.zip

@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>注册 · 交通目标检测对比系统</title>
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'detector/css/style.css' %}">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<div class="auth-page">
+    <div class="auth-blob b1"></div>
+    <div class="auth-blob b2"></div>
+    <div class="auth-blob b3"></div>
+
+    <div class="auth-card">
+        <div class="auth-icon-circle">✨</div>
+        <h3>创建账号</h3>
+        <p class="subtitle">注册以开始使用智能检测</p>
+
+        {% if form.errors %}
+            <div class="alert">
+                {% for field, errors in form.errors.items %}
+                    {% for e in errors %}<div>• {{ e }}</div>{% endfor %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <label class="form-label" for="id_username">用户名</label>
+            <div class="auth-field">
+                <input type="text" name="username" id="id_username" class="form-control"
+                       placeholder="请输入用户名" required autofocus
+                       minlength="3" maxlength="150" autocomplete="username">
+                <span class="field-icon">👤</span>
+            </div>
+            <div class="form-text">3-150 个字符，仅限字母、数字和 @/./+/-/_</div>
+
+            <label class="form-label" for="id_password1">密码</label>
+            <div class="auth-field">
+                <input type="password" name="password1" id="id_password1" class="form-control"
+                       placeholder="请输入密码" required autocomplete="new-password">
+                <span class="field-icon">🔒</span>
+            </div>
+            <div class="form-text">至少 8 个字符，不能为纯数字</div>
+
+            <label class="form-label" for="id_password2">确认密码</label>
+            <div class="auth-field">
+                <input type="password" name="password2" id="id_password2" class="form-control"
+                       placeholder="请再次输入密码" required autocomplete="new-password">
+                <span class="field-icon">🔐</span>
+            </div>
+
+            <button type="submit" class="btn-auth btn-green">注 册</button>
+        </form>
+
+        <p class="auth-switch">
+            已有账号？ <a href="{% url 'accounts:login' %}">← 返回登录</a>
+        </p>
+    </div>
+</div>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[
+  "Vehicle",
+  "Bus",
+  "Bicycle",
+  "Person",
+  "Engine",
+  "Truck",
+  "Tricycle",
+  "Obstacle",
+  "Pothole",
+  "Traffic Light",
+  "Traffic Sign"
+]

@@ -1,0 +1,21 @@
+﻿# 基于Django与双模型对比的交通目标检测系统 - 本地运行依赖
+# 安装: pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+Django>=4.2,<5.0
+Pillow>=10.0
+PyMySQL>=1.1
+numpy
+# --- 模型推理（本地CPU即可） ---
+torch>=2.0
+torchvision>=0.15
+# --- YOLOv8(ultralytics) 推理 ---
+ultralytics>=8.3
+# --- YOLOv5(torch.hub) / ultralytics 运行依赖 ---
+pandas
+matplotlib
+seaborn
+pyyaml
+requests
+tqdm
+psutil
+scipy
+opencv-python

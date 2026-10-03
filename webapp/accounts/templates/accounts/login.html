@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>登录 · 交通目标检测对比系统</title>
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'detector/css/style.css' %}">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<div class="auth-page">
+    <div class="auth-blob b1"></div>
+    <div class="auth-blob b2"></div>
+    <div class="auth-blob b3"></div>
+
+    <div class="auth-card">
+        <div class="auth-icon-circle">🚦</div>
+        <h3>欢迎回来</h3>
+        <p class="subtitle">登录以使用交通目标检测系统</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
+
+            <label class="form-label" for="id_username">用户名</label>
+            <div class="auth-field">
+                <input type="text" name="username" id="id_username" class="form-control"
+                       placeholder="请输入用户名" required autofocus autocomplete="username">
+                <span class="field-icon">👤</span>
+            </div>
+
+            <label class="form-label" for="id_password">密码</label>
+            <div class="auth-field">
+                <input type="password" name="password" id="id_password" class="form-control"
+                       placeholder="请输入密码" required autocomplete="current-password">
+                <span class="field-icon">🔒</span>
+            </div>
+
+            <button type="submit" class="btn-auth">登 录</button>
+        </form>
+
+        <p class="auth-switch">
+            还没有账号？ <a href="{% url 'accounts:register' %}">立即注册 →</a>
+        </p>
+    </div>
+</div>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
